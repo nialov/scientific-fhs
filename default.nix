@@ -1,6 +1,6 @@
-{ lib, pkgs, enableJulia ? true, juliaVersion ? "julia_16", enableConda ? true
+{ lib, pkgs, enableJulia ? true, juliaVersion ? "julia_16", enableConda ? false
 , condaInstallationPath ? "~/.conda", condaJlEnv ? "conda_jl"
-, pythonVersion ? "3.8", enableGraphical ? true, enableNVIDIA ? false
+, pythonVersion ? "3.8", enableGraphical ? false, enableNVIDIA ? false
 , enableNode ? true, ... }:
 
 with lib;
@@ -43,7 +43,7 @@ let
       ffmpeg
       fontconfig
       freetype
-      gdk_pixbuf
+      gdk-pixbuf
       gettext
       glfw
       glib
@@ -99,19 +99,24 @@ let
       linuxPackages.nvidia_x11
     ];
 
-  juliaPackages = pkgs: version:
-    with pkgs;
-    let julias = callPackage ./julia.nix { };
-    in [ julias."${version}" ];
+  juliaPackages = [ pkgs.julia-bin ];
+  # juliaPackages = pkgs:
+  #   with pkgs;
+  #   # let
+  #   #   julias = callPackage ./julia.nix { };
+  #   #   # in [ julias."${version}" ];
+  #   # in [ pkgs.julia ];
+  #   in [ pkgs.julia ];
 
   condaPackages = pkgs:
     with pkgs;
     [ (callPackage ./conda.nix { installationPath = condaInstallationPath; }) ];
 
   targetPkgs = pkgs:
-    (standardPackages pkgs)
-    ++ optionals enableGraphical (graphicalPackages pkgs)
-    ++ optionals enableJulia (juliaPackages pkgs juliaVersion)
+    (standardPackages pkgs) ++ optionals enableGraphical
+    (graphicalPackages pkgs)
+    # ++ optionals enableJulia (juliaPackages pkgs juliaVersion)
+    ++ optionals enableJulia juliaPackages
     ++ optionals enableConda (condaPackages pkgs)
     ++ optionals enableNVIDIA (nvidiaPackages pkgs);
 
